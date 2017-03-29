@@ -28,6 +28,7 @@ import (
 	"github.com/prometheus/prometheus/discovery/gce"
 	"github.com/prometheus/prometheus/discovery/kubernetes"
 	"github.com/prometheus/prometheus/discovery/marathon"
+	"github.com/prometheus/prometheus/discovery/swarm"
 	"github.com/prometheus/prometheus/discovery/triton"
 	"github.com/prometheus/prometheus/discovery/zookeeper"
 	"golang.org/x/net/context"
@@ -70,6 +71,14 @@ func ProvidersFromConfig(cfg config.ServiceDiscoveryConfig) map[string]TargetPro
 			continue
 		}
 		app("consul", i, k)
+	}
+	for i, c := range cfg.SwarmSDConfigs {
+		k, err := swarm.NewDiscovery(c)
+		if err != nil {
+			log.Errorf("Cannot create Swarm discovery: %s", err)
+			continue
+		}
+		app("swarm", i, k)
 	}
 	for i, c := range cfg.MarathonSDConfigs {
 		m, err := marathon.NewDiscovery(c)

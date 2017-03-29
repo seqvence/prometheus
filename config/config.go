@@ -118,6 +118,13 @@ var (
 		Scheme:       "http",
 	}
 
+	// DefaultSwarmSDConfig is the default Swarm SD configuration.
+	DefaultSwarmSDConfig = SwarmSDConfig{
+		Server:          "/var/run/docker.sock",
+		APIVersion:      "1.27",
+		RefreshInterval: model.Duration(30 * time.Second),
+	}
+
 	// DefaultServersetSDConfig is the default Serverset SD configuration.
 	DefaultServersetSDConfig = ServersetSDConfig{
 		Timeout: model.Duration(10 * time.Second),
@@ -458,6 +465,8 @@ type ServiceDiscoveryConfig struct {
 	AzureSDConfigs []*AzureSDConfig `yaml:"azure_sd_configs,omitempty"`
 	// List of Triton service discovery configurations.
 	TritonSDConfigs []*TritonSDConfig `yaml:"triton_sd_configs,omitempty"`
+	// List of Swarm service discovery configurations.
+	SwarmSDConfigs []*SwarmSDConfig `yaml:"swarm_sd_configs,omitempty"`
 
 	// Catches all undefined fields and must be empty after parsing.
 	XXX map[string]interface{} `yaml:",inline"`
@@ -853,6 +862,30 @@ func (c *ConsulSDConfig) UnmarshalYAML(unmarshal func(interface{}) error) error 
 	}
 	if strings.TrimSpace(c.Server) == "" {
 		return fmt.Errorf("Consul SD configuration requires a server address")
+	}
+	return nil
+}
+
+// SwarmSDConfig is the configuration for Consul service discovery.
+type SwarmSDConfig struct {
+	Server          string         `yaml:"server"`
+	APIVersion      string         `yaml:"api_version"`
+	RefreshInterval model.Duration `yaml:"refresh_interval,omitempty"`
+	TLSConfig       TLSConfig      `yaml:"tls_config,omitempty"`
+	// Catches all undefined fields and must be empty after parsing.
+	XXX map[string]interface{} `yaml:",inline"`
+}
+
+// UnmarshalYAML implements the yaml.Unmarshaler interface.
+func (c *SwarmSDConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	*c = DefaultSwarmSDConfig
+	type plain SwarmSDConfig
+	err := unmarshal((*plain)(c))
+	if err != nil {
+		return err
+	}
+	if err := checkOverflow(c.XXX, "swarm_sd_config"); err != nil {
+		return err
 	}
 	return nil
 }
